@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpenText,
   Bot,
+  Command,
   FileText,
   FolderKanban,
   History,
@@ -25,6 +26,11 @@ const navItems = [
     href: "/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard
+  },
+  {
+    href: "/command-center",
+    label: "Command Center",
+    icon: Command
   },
   {
     href: "/projects",

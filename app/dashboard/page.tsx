@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   BookOpenText,
   Bot,
+  Command,
   FileText,
   FolderKanban,
   KeyRound,
@@ -38,6 +39,9 @@ export default function DashboardPage() {
   const { stats: sessionStats } = useSessions();
   const { stats: skillStats } = useSkills();
   const projectsById = new Map(projects.map((project) => [project.id, project]));
+  const commandCenterSessions = sessionStats.recentSessions.filter((session) =>
+    session.title.startsWith("Command Center -")
+  );
 
   return (
     <DashboardLayout>
@@ -112,6 +116,71 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Command className="h-5 w-5" />
+              </span>
+              <CardTitle>Open Command Center</CardTitle>
+            </div>
+            <Button asChild>
+              <Link href="/command-center">
+                <Command className="h-4 w-4" />
+                Open
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+            Run agents from one workspace with project context, memories, skills, secret references,
+            sessions, prompts, files, and handoffs in one flow.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle>Latest Command Center Sessions</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/command-center">
+                <Command className="h-4 w-4" />
+                Open Command Center
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {commandCenterSessions.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
+              No Command Center sessions saved yet.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {commandCenterSessions.map((session) => (
+                <div key={session.id} className="rounded-lg border bg-background/60 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">{session.title}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{session.agentName ?? "Agent"}</span>
+                      <span>{session.type}</span>
+                      <span>{session.status}</span>
+                      <span>{formatDate(session.createdAt)}</span>
+                    </div>
+                  </div>
+                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {projectsById.get(session.projectId)?.name ?? session.projectName}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="mt-8">
         <CardHeader>
