@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "cli:dev": "npm --prefix packages/cli run dev --",
+    "cli:build": "npm --prefix packages/cli run build",
+    "cli:typecheck": "npm --prefix packages/cli run typecheck",
     "start": "next start",
     "lint": "eslint"
   },

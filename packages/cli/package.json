@@ -1,0 +1,24 @@
+{
+  "name": "@agentdock/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "agentdock": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup src/index.ts --format esm --dts false --clean --banner:js='#!/usr/bin/env node'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsup": "^8.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "latest"
+  }
+}
