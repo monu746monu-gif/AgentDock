@@ -4,12 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpenText,
+  Bot,
+  FileText,
   FolderKanban,
+  History,
+  KeyRound,
   LayoutDashboard,
   Network,
+  UploadCloud,
+  Shuffle,
+  Workflow,
   WandSparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   {
@@ -31,11 +40,47 @@ const navItems = [
     href: "/skills",
     label: "Skills",
     icon: WandSparkles
+  },
+  {
+    href: "/codex-prompt",
+    label: "Codex Prompt",
+    icon: Bot
+  },
+  {
+    href: "/generate",
+    label: "Generate Files",
+    icon: FileText
+  },
+  {
+    href: "/sessions",
+    label: "Sessions",
+    icon: History
+  },
+  {
+    href: "/secrets",
+    label: "Secrets Vault",
+    icon: KeyRound
+  },
+  {
+    href: "/agents",
+    label: "Agents",
+    icon: Workflow
+  },
+  {
+    href: "/handoff",
+    label: "Handoff",
+    icon: Shuffle
+  },
+  {
+    href: "/migrate",
+    label: "Migrate",
+    icon: UploadCloud
   }
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { isConfigured, logout, user } = useAuth();
 
   return (
     <aside className="border-b border-border bg-background/95 md:fixed md:inset-y-0 md:left-0 md:w-64 md:border-b-0 md:border-r">
@@ -72,6 +117,14 @@ export function AppSidebar() {
         </nav>
 
         <div className="mt-auto hidden p-5 md:block">
+          {isConfigured ? (
+            <div className="mb-3 rounded-lg border bg-card p-4">
+              <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+              <Button className="mt-3 w-full" variant="outline" size="sm" onClick={logout}>
+                Logout
+              </Button>
+            </div>
+          ) : null}
           <div className="rounded-lg border bg-card p-4">
             <p className="text-sm font-medium">AgentDock MVP</p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">

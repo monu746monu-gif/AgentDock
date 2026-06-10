@@ -3,10 +3,15 @@
 import Link from "next/link";
 import {
   BookOpenText,
+  Bot,
+  FileText,
   FolderKanban,
+  KeyRound,
   ListChecks,
   Plus,
+  Shuffle,
   Sparkles,
+  Workflow,
   WandSparkles
 } from "lucide-react";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
@@ -14,13 +19,23 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/memories";
+import { useAgents } from "@/hooks/use-agents";
+import { useGeneratedFiles } from "@/hooks/use-generated-files";
+import { useHandoffs } from "@/hooks/use-handoffs";
 import { useMemories } from "@/hooks/use-memories";
 import { useProjects } from "@/hooks/use-projects";
+import { useSecrets } from "@/hooks/use-secrets";
+import { useSessions } from "@/hooks/use-sessions";
 import { useSkills } from "@/hooks/use-skills";
 
 export default function DashboardPage() {
   const { addProject, isLoaded, projects, stats } = useProjects();
+  const { stats: agentStats } = useAgents();
+  const { stats: generatedFileStats } = useGeneratedFiles();
+  const { stats: handoffStats } = useHandoffs();
   const { stats: memoryStats } = useMemories();
+  const { stats: secretStats } = useSecrets();
+  const { stats: sessionStats } = useSessions();
   const { stats: skillStats } = useSkills();
   const projectsById = new Map(projects.map((project) => [project.id, project]));
 
@@ -37,8 +52,11 @@ export default function DashboardPage() {
         <CreateProjectDialog onCreateProject={addProject} />
       </div>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
         <StatCard icon={FolderKanban} label="Total projects" value={stats.totalProjects} />
+        <StatCard icon={Workflow} label="Total agents" value={agentStats.totalAgents} />
+        <StatCard icon={Workflow} label="Active agents" value={agentStats.activeAgents} />
+        <StatCard icon={Shuffle} label="Total handoffs" value={handoffStats.totalHandoffs} />
         <StatCard icon={ListChecks} label="Total tasks/bugs" value={stats.totalTasks} />
         <StatCard
           icon={BookOpenText}
@@ -49,6 +67,31 @@ export default function DashboardPage() {
           icon={WandSparkles}
           label="Total skills"
           value={skillStats.totalSkills}
+        />
+        <StatCard
+          icon={Bot}
+          label="Total sessions"
+          value={sessionStats.totalSessions}
+        />
+        <StatCard
+          icon={Bot}
+          label="Active sessions"
+          value={sessionStats.activeSessions}
+        />
+        <StatCard
+          icon={Bot}
+          label="Completed"
+          value={sessionStats.completedSessions}
+        />
+        <StatCard
+          icon={FileText}
+          label="Generated files"
+          value={generatedFileStats.totalGeneratedFiles}
+        />
+        <StatCard
+          icon={KeyRound}
+          label="Total secrets"
+          value={secretStats.totalSecrets}
         />
         <Card>
           <CardHeader>
@@ -69,6 +112,77 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle>Recent Agents</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/agents">
+                <Workflow className="h-4 w-4" />
+                View agents
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {agentStats.recentAgents.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
+              No agents registered yet.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {agentStats.recentAgents.map((agent) => (
+                <div key={agent.id} className="rounded-lg border bg-background/60 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">{agent.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{agent.type}</span>
+                      <span>{agent.provider}</span>
+                      <span>{agent.status}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle>Recent Handoffs</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/handoff">
+                <Shuffle className="h-4 w-4" />
+                View handoffs
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {handoffStats.recentHandoffs.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
+              No handoffs saved yet.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {handoffStats.recentHandoffs.map((handoff) => (
+                <div key={handoff.id} className="rounded-lg border bg-background/60 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">{handoff.sourceAgentName}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{handoff.exportTarget}</span>
+                      <span>{projectsById.get(handoff.projectId)?.name ?? "Unknown project"}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="mt-8">
         <CardHeader>
@@ -102,6 +216,125 @@ export default function DashboardPage() {
                   </div>
                   <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
                     {memory.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle>Recent Secrets</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/secrets">
+                <KeyRound className="h-4 w-4" />
+                View secrets
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {secretStats.recentSecrets.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
+              No secrets saved yet.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {secretStats.recentSecrets.map((secret) => (
+                <div key={secret.id} className="rounded-lg border bg-background/60 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">{secret.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{secret.provider}</span>
+                      <span>
+                        {secret.projectId === "global"
+                          ? "Global"
+                          : projectsById.get(secret.projectId)?.name ?? "Unknown project"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle>Recent Generated Files</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/generate">
+                <FileText className="h-4 w-4" />
+                Generate files
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {generatedFileStats.recentGeneratedFiles.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
+              No generated files saved yet.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {generatedFileStats.recentGeneratedFiles.map((file) => (
+                <div key={file.id} className="rounded-lg border bg-background/60 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">{file.fileName}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{projectsById.get(file.projectId)?.name ?? "Unknown project"}</span>
+                      <span>{formatDate(file.createdAt)}</span>
+                    </div>
+                  </div>
+                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {file.fileType}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle>Recent Sessions</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/sessions">
+                <Bot className="h-4 w-4" />
+                View sessions
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {sessionStats.recentSessions.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
+              No saved prompt sessions yet.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {sessionStats.recentSessions.map((session) => (
+                <div key={session.id} className="rounded-lg border bg-background/60 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">
+                      {projectsById.get(session.projectId)?.name ?? "Unknown project"}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{session.targetAgent}</span>
+                      <span>{session.type}</span>
+                      <span>{session.status}</span>
+                      <span>{formatDate(session.createdAt)}</span>
+                    </div>
+                  </div>
+                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {session.title}
                   </p>
                 </div>
               ))}

@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MEMORIES_STORAGE_KEY, Memory, MemoryInput } from "@/lib/memories";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/lib/supabase/client";
+import { memoryInsert, toMemory } from "@/lib/supabase/mappers";
 
 function readMemories() {
   if (typeof window === "undefined") {
@@ -23,19 +26,54 @@ function writeMemories(memories: Memory[]) {
 }
 
 export function useMemories() {
+  const { isConfigured, user } = useAuth();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setMemories(readMemories());
-      setIsLoaded(true);
+      async function loadMemories() {
+        if (isConfigured && user && supabase) {
+          const { data, error: requestError } = await supabase
+            .from("memories")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (requestError) {
+            setError(requestError.message);
+          } else {
+            setMemories((data ?? []).map(toMemory));
+          }
+        } else {
+          setMemories(readMemories());
+        }
+        setIsLoaded(true);
+      }
+      loadMemories();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [isConfigured, user]);
 
-  const addMemory = (input: MemoryInput) => {
+  const addMemory = async (input: MemoryInput) => {
+    if (isConfigured && user && supabase) {
+      const { data, error: requestError } = await supabase
+        .from("memories")
+        .insert(memoryInsert(user.id, input))
+        .select("*")
+        .single();
+
+      if (requestError) {
+        setError(requestError.message);
+        return null;
+      }
+
+      const memory = toMemory(data);
+      setMemories((currentMemories) => [memory, ...currentMemories]);
+      return memory;
+    }
+
     const memory: Memory = {
       ...input,
       id: crypto.randomUUID(),
@@ -51,7 +89,19 @@ export function useMemories() {
     return memory;
   };
 
-  const deleteMemory = (memoryId: string) => {
+  const deleteMemory = async (memoryId: string) => {
+    if (isConfigured && user && supabase) {
+      const { error: requestError } = await supabase
+        .from("memories")
+        .delete()
+        .eq("id", memoryId);
+
+      if (requestError) {
+        setError(requestError.message);
+        return;
+      }
+    }
+
     setMemories((currentMemories) => {
       const nextMemories = currentMemories.filter((memory) => memory.id !== memoryId);
       writeMemories(nextMemories);
@@ -70,6 +120,7 @@ export function useMemories() {
   return {
     addMemory,
     deleteMemory,
+    error,
     isLoaded,
     memories,
     stats
